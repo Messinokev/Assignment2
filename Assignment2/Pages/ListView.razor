@@ -1,0 +1,478 @@
+﻿@page "/List"
+@using Assignment2.Models
+@using Assignment2.Data
+@inject NavigationManager NavigationManager
+@using System.Security.Claims
+@using Microsoft.AspNetCore.Components.Authorization
+@inject IAdultService CloudAdultService
+@inject IFamilyService CloudFamilyService
+
+<h3>Lists:</h3>
+
+<p>
+    Select filter:
+    <select class="form-control sekectpicker" @onchange="@((arg) => FilterTable(arg))" style="width:100px">
+        <option>Family</option>
+        <option>Adult</option>
+        <AuthorizeView>
+            <option>Children</option>
+        </AuthorizeView>
+    </select>
+</p>
+
+
+
+
+
+@if (adultsToShow == null)
+{
+    <p>
+        <em>Loading...</em>
+    </p>
+}
+else
+{
+    if (adultHidden == false)
+    {
+
+
+        <p>
+            Filter by Adult name: <input type="text" @bind="filterByAdultName" style="width:200px; height: 40px" /> <br />
+            Older than: <input type="number" @bind="filterByOlderThan" style="width:50px" />
+        </p>
+
+        <p class="action">
+            <button class="btn btn-outline-light" type="submit" @onclick="loadAdultsByFilter">Filter</button>
+        </p>
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Job Title</th>
+                    <th>ID</th>
+                    <th>First Name</th>
+                    <th>Last Name</th>
+                    <th>Hair Color</th>
+                    <th>Eye Color</th>
+                    <th>Age</th>
+                    <th>Weight</th>
+                    <th>Height</th>
+                    <th>Sex</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var adult in allAdults)
+                {
+                    <tr @onclick="() => TrClickedAtIndex(adult.Id)">
+                        <td>@adult.JobTitle</td>
+                        <td>@adult.Id</td>
+                        <td>@adult.FirstName</td>
+                        <td>@adult.LastName</td>
+                        <td>@adult.HairColor</td>
+                        <td>@adult.EyeColor</td>
+                        <td>@adult.Age</td>
+                        <td>@adult.Weight</td>
+                        <td>@adult.Height</td>
+                        <td>@adult.Sex</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+    if (familyHidden == false)
+    {
+        adultsToShow = allAdults;
+
+        <button class="btn btn-primary" @onclick="UpdatePet">Add Pet</button>
+
+        <p>@errorMessage</p>
+
+        @if (addPetHidden == false)
+        {
+            <EditForm Model="@newPet" OnValidSubmit="@AddNewPet">
+                <DataAnnotationsValidator />
+                <ValidationSummary />
+                <div class="form-group">
+                    Species: <br />
+                    <select @bind="newPet.Species" class="form-control" style="width:200px">
+                        <option disabled hidden>Select Species...</option>
+                        <option>Dog</option>
+                        <option>Cat</option>
+                        <option>Hamster</option>
+                        <option>Bunny</option>
+                        <option>Frog</option>
+                        <option>Budgerigar</option>
+                        <option>Owl</option>
+                        <option>Snake</option>
+                        <option>Rat</option>
+                        <option>Horse</option>
+                        <option>Spider</option>
+                        <option>Chameleon</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    Name: <br />
+                    <InputTextArea @bind-Value="newPet.Name" />
+                </div>
+                <div class="form-group">
+                    Age: <br />
+                    <InputNumber @bind-Value="newPet.Age" style="width:100px" />
+                </div>
+                <p class="action">
+                    <button class="btn btn-outline-light" type="submit">Adopt Pet</button>
+                </p>
+            </EditForm>
+        }
+
+        @if (addPetHidden == true)
+        {
+
+        }
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Street Name</th>
+                    <th>House Number</th>
+                    <th>Adults</th>
+                    <th>Children</th>
+                    <th>Pets</th>
+                    <th>Add new pet</th>
+                    <AuthorizeView Policy="Admin">
+                        <th>Remove</th>
+                    </AuthorizeView>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var family in allFamily)
+                {
+                    <tr class="rowsToColor">
+                        <td>@family.StreetName</td>
+                        <td>@family.HouseNumber</td>
+                        <td>
+                            @foreach (var adult in @family.Adults)
+                            {
+                        <tr>@adult.FirstName @adult.LastName</tr>
+                    }</td>
+                        <td>
+                            @foreach (var child in @family.Children)
+                            {
+                            <tr>@child.FirstName @child.LastName</tr>
+                        }
+                            </td>
+                            <td>
+                                @foreach (var pet in @family.Pets)
+                                {
+                                <tr>@pet.Name (@pet.Species)</tr>
+                            }
+                                </td>
+                                @if (family.Pets.Count < 3)
+                                {
+                                    <td> <input type="checkbox" checked="@false" @onchange="@((arg) => AddPetFamilies(arg, family))" /> </td>
+                                }
+                                else
+                                {
+                                    <td>Max 3 pets</td>
+                                }
+                                <AuthorizeView Policy="Admin">
+                                    <td>
+                                        <button @onclick="@(() => RemoveFamily(family))">
+                                            <i class="oi oi-trash" style="color:red" />
+                                        </button>
+                                    </td>
+                                </AuthorizeView>
+                                </tr>
+                            }
+                </tbody>
+            </table>
+        }
+        @if (childrenHidden == false)
+        {
+            adultsToShow = allAdults;
+
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>First Name</th>
+                        <th>Last Name</th>
+                        <th>Eye Color</th>
+                        <th>Hair Color</th>
+                        <th>Age</th>
+                        <th>Weight</th>
+                        <th>Height</th>
+                        <th>Sex</th>
+                        <th>Interests</th>
+                        <th>Pets</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var family in allFamily)
+                    {
+                        @foreach (var child in @family.Children)
+                        {
+                            <tr>
+                                <td>@child.Id</td>
+                                <td>@child.FirstName</td>
+                                <td>@child.LastName</td>
+                                <td>@child.EyeColor</td>
+                                <td>@child.HairColor</td>
+                                <td>@child.Age</td>
+                                <td>@child.Weight</td>
+                                <td>@child.Height</td>
+                                <td>@child.Sex</td>
+                                <td>
+                                    @foreach (var interest in @child.ChildInterests)
+                                    {
+                                <tr>@interest.InterestId</tr>
+                            }</td>
+                                <td>
+                                    @foreach (var pet in @child.Pets)
+                                    {
+                                    <tr>@pet.Name (@pet.Species)</tr>
+                                }</td>
+                                    </tr>
+                                }
+                    }
+                    </tbody>
+                </table>
+            }
+
+        if (adultHidden == true && familyHidden == true && childrenHidden == true)
+        {
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Job Title</th>
+                        <th>ID</th>
+                        <th>First Name</th>
+                        <th>Last Name</th>
+                        <th>Hair Color</th>
+                        <th>Eye Color</th>
+                        <th>Age</th>
+                        <th>Weight</th>
+                        <th>Height</th>
+                        <th>Sex</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>@adultInTable.JobTitle</td>
+                        <td>@adultInTable.Id</td>
+                        <td>@adultInTable.FirstName</td>
+                        <td>@adultInTable.LastName</td>
+                        <td>@adultInTable.HairColor</td>
+                        <td>@adultInTable.EyeColor</td>
+                        <td>@adultInTable.Age</td>
+                        <td>@adultInTable.Weight</td>
+                        <td>@adultInTable.Height</td>
+                        <td>@adultInTable.Sex</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <EditForm Model="@adultToModify" OnValidSubmit="@modifyAdult">
+                <DataAnnotationsValidator />
+                <ValidationSummary />
+                <div class="form-group">
+                    Job Title: <br />
+                    <InputTextArea @bind-Value="adultToModify.JobTitle" />
+                </div>
+                <div class="form-group">
+                    First Name: <br />
+                    <InputTextArea @bind-Value="adultToModify.FirstName" />
+                </div>
+                <div class="form-group">
+                    Last Name: <br />
+                    <InputTextArea @bind-Value="adultToModify.LastName" />
+                </div>
+                <div class="form-group">
+                    Hair color: <br />
+                    <select @bind="adultToModify.HairColor" class="form-control" style="width:200px">
+                        <option>Blonde</option>
+                        <option>Red</option>
+                        <option>Brown</option>
+                        <option>Black</option>
+                        <option>White</option>
+                        <option>Grey</option>
+                        <option>Blue</option>
+                        <option>Green</option>
+                        <option>Leverpostej</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    Age: <br />
+                    <InputNumber @bind-Value="adultToModify.Age" style="width:100px" />
+                </div>
+                <div class="form-group">
+                    Weight: <br />
+                    <InputNumber @bind-Value="adultToModify.Weight" style="width:100px;" />
+                </div>
+                <div class="form-group">
+                    Height: <br />
+                    <InputNumber @bind-Value="adultToModify.Height" style="width:100px" />
+                </div>
+                <p class="action">
+                    <button class="btn btn-outline-dark" type="submit">Modify</button>
+                </p>
+            </EditForm>
+
+        }
+    }
+
+@code {
+    private IList<Adult> adultsToShow;
+    private IList<Adult> allAdults;
+
+    private IList<Family> allFamily;
+
+    private IList<Family> petFamilies;
+
+    private string? filterByCategory;
+
+    private string filterByAdultName;
+    private int filterByOlderThan;
+
+    private bool addPetHidden = true;
+
+    private bool adultHidden = true;
+    private bool familyHidden = false;
+    private bool childrenHidden = true;
+
+    private Adult adultToModify = new Adult();
+    private Adult adultInTable = new Adult();
+
+    private Pet newPet = new Pet();
+
+    private string errorMessage = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        allAdults = await CloudAdultService.GetAdultAsync(null, 0);
+        adultsToShow = allAdults;
+
+        allFamily = await CloudFamilyService.GetFamilyAsync();
+
+        petFamilies = new List<Family>();
+    }
+
+    private void AddPetFamilies(ChangeEventArgs evt, Family family)
+    {
+        if ((bool)evt.Value == true)
+        {
+            if (!petFamilies.Contains(family))
+            {
+                petFamilies.Add(family);
+            }
+        }
+        if ((bool)evt.Value == false)
+        {
+            petFamilies.Remove(family);
+        }
+    }
+
+
+    private async Task AddNewPet()
+    {
+        foreach (var family in petFamilies)
+        {
+            newPet.Id = family.Pets.Count;
+            family.Pets.Add(newPet);
+            await CloudFamilyService.UpdateFamilyAsync(family);
+        }
+
+        petFamilies.Clear();
+        NavigationManager.NavigateTo("/");
+        NavigationManager.NavigateTo("/List");
+    }
+
+
+    public void UpdatePet()
+    {
+        if (addPetHidden == true)
+        {
+            addPetHidden = false;
+        }
+        else
+        {
+            addPetHidden = true;
+        }
+
+    }
+
+    public async Task TrClickedAtIndex(int id)
+    {
+        adultHidden = true;
+        familyHidden = true;
+        childrenHidden = true;
+
+        adultToModify = await CloudAdultService.GetAdultByIdAsync(id);
+
+        modifyAdultDetails();
+    }
+
+    private void modifyAdult()
+    {
+        modifyAdultDetails();
+        CloudAdultService.UpdateAdultAsync(adultInTable);
+    }
+
+    private void modifyAdultDetails()
+    {
+        adultInTable.JobTitle = adultToModify.JobTitle;
+        adultInTable.Id = adultToModify.Id;
+        adultInTable.FirstName = adultToModify.FirstName;
+        adultInTable.LastName = adultToModify.LastName;
+        adultInTable.HairColor = adultToModify.HairColor;
+        adultInTable.EyeColor = adultToModify.EyeColor;
+        adultInTable.Age = adultToModify.Age;
+        adultInTable.Weight = adultToModify.Weight;
+        adultInTable.Height = adultToModify.Height;
+        adultInTable.Sex = adultToModify.Sex;
+    }
+
+    private void FilterTable(ChangeEventArgs args)
+    {
+        filterByCategory = null;
+
+        try
+        {
+            filterByCategory = args.Value.ToString();
+
+            if (filterByCategory.Equals("Adult"))
+            {
+                adultHidden = false;
+                familyHidden = true;
+                childrenHidden = true;
+            }
+            if (filterByCategory.Equals("Family"))
+            {
+                adultHidden = true;
+                familyHidden = false;
+                childrenHidden = true;
+            }
+            if (filterByCategory.Equals("Children"))
+            {
+                adultHidden = true;
+                familyHidden = true;
+                childrenHidden = false;
+            }
+        }
+        catch (Exception e) { }
+    }
+
+
+
+    public async Task loadAdultsByFilter()
+    {
+        allAdults = await CloudAdultService.GetAdultAsync(filterByAdultName, filterByOlderThan);
+        adultsToShow = allAdults;
+    }
+
+
+    private void RemoveFamily(Family family)
+    {
+        CloudFamilyService.RemoveFamilyAsync(family);
+        allFamily.Remove(family);
+    }
+}

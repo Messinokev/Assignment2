@@ -1,0 +1,90 @@
+﻿@page "/Add"
+@attribute [Authorize(Policy = "SecurityLevel2")]
+@using Assignment2.Models
+@using Assignment2.Data
+@inject NavigationManager NavigationManager
+@inject IAdultService CloudAdultService
+
+
+<h3>Add new Adult </h3>
+
+<EditForm Context="formContext" Model="@newAdult" OnValidSubmit="@AddNewAdult">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+    <div class="form-group">
+        Job Title: <br />
+        <InputTextArea @bind-Value="newAdult.JobTitle" />
+    </div>
+    <div class="form-group">
+        First Name: <br />
+        <InputTextArea @bind-Value="newAdult.FirstName" />
+    </div>
+    <div class="form-group">
+        Last Name: <br />
+        <InputTextArea @bind-Value="newAdult.LastName" />
+    </div>
+    <div class="form-group">
+        Hair color: <br />
+        <select @bind="newAdult.HairColor" class="form-control" style="width:200px">
+            <option disabled hidden>Select Eye Color...</option>
+            <option>Blonde</option>
+            <option>Red</option>
+            <option>Brown</option>
+            <option>Black</option>
+            <option>White</option>
+            <option>Grey</option>
+            <option>Blue</option>
+            <option>Green</option>
+            <option>Leverpostej</option>
+        </select>
+    </div>
+    <div class="form-group">
+        Eye color: <br />
+        <select @bind="newAdult.EyeColor" class="form-control" style="width:200px">
+            <option disabled hidden>Select Hair Color...</option>
+            <option>Black</option>
+            <option>Grey</option>
+            <option>Brown</option>
+            <option>Amber</option>
+            <option>Hazel</option>
+            <option>Blue</option>
+            <option>Green</option>
+        </select>
+    </div>
+    <div class="form-group">
+        Age: <br />
+        <InputNumber @bind-Value="newAdult.Age" style="width:100px" />
+    </div>
+    <div class="form-group">
+        Weight: <br />
+        <InputNumber @bind-Value="newAdult.Weight" style="width:100px;" />
+    </div>
+    <div class="form-group">
+        Height: <br />
+        <InputNumber @bind-Value="newAdult.Height" style="width:100px" />
+    </div>
+    <div class="form-group">
+        Sex: <br />
+        <select @bind="newAdult.Sex" class="form-control" style="width:200px">
+            <option disabled hidden>Select Sex...</option>
+            <option>M</option>
+            <option>F</option>
+            <option>Other</option>
+        </select>
+    </div>
+    <p class="action">
+        <button class="btn btn-outline-light" type="submit">Create</button>
+    </p>
+</EditForm>
+
+@code {
+
+    private Adult newAdult = new Adult();
+
+    private async Task AddNewAdult()
+    {
+        CloudAdultService.AddAdultAsync(newAdult);
+        NavigationManager.NavigateTo("/List");
+    }
+
+}
